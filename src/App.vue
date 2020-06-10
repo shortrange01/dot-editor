@@ -1,28 +1,18 @@
 <template>
-  <div id="app">
-    <DotEdiotor />
-  </div>
+    <div id="app">
+        <DotEdiotor />
+    </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 import DotEdiotor from "./components/DotEditor.vue";
+import "destyle.css"; // reset css読み込み
 
 @Component({
-  components: {
-    DotEdiotor
-  }
+    components: {
+        DotEdiotor,
+    },
 })
 export default class App extends Vue {}
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
