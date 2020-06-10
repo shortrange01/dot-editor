@@ -1,4 +1,4 @@
-# dot-editor
+# dot-editor（ドットエディタ）
 
 ## Project setup
 ```
