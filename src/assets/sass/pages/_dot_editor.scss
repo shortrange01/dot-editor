@@ -5,6 +5,7 @@
     text-align: center;
     & > .canvas {
         margin-right: 20px;
+        height: 512px;
         box-shadow: 2px 2px 6px 2px rgba(0, 0, 0, 0.2);
     }
     .editorBlock {
@@ -34,7 +35,7 @@
     .colorHistoryBrock {
         display: flex;
         width: 500px;
-        margin: 10px auto 0;
+        margin: 16px auto 0;
 
         flex-wrap: wrap;
         & > .colorHistory {
@@ -51,29 +52,35 @@
             }
         }
     }
-    .fileBtnBrock,
-    .pickerBtnBrock {
+    .pickerBtnBrock,
+    .fileBtnBrock {
         display: flex;
         justify-content: space-around;
         width: 512px;
-
         flex-wrap: wrap;
-        & > .btn {
-            width: 240px;
-        }
+        font-family: "Press Start 2P", cursive;
     }
     .pickerBtnBrock > .btn {
-        width: 68px;
+        width: 112px;
         height: 20px;
+        margin: 6px 0 0 0;
         padding: 4px 0;
-        font-size: 1rem;
+        font-size: 1.1rem;
+        background-color: $BtnColor1;
+        color: #fff;
+        border-radius: 2px;
+        transition: 0.5s;
+        &.active {
+            background-color: #d65a4f;
+        }
     }
-    .btn {
-        margin: 10px auto;
+    .fileBtnBrock > .btn {
+        width: 240px;
+        margin: 10px auto 0;
         padding: 10px;
-        border: solid 1px #c3c;
-        border-radius: 10px;
-        color: #c3c;
+        border: solid 3px $BtnColor1;
+        color: $BtnColor1;
+        border-radius: 4px;
     }
     .eraser {
         display: flex;

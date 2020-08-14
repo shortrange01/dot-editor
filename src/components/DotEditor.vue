@@ -1,5 +1,9 @@
 <template>
     <div class="container dotEditor">
+        <demo
+            v-show="showDemoModal"
+            @onClickDemoClose="onClickDemoClose"
+        ></demo>
         <canvas id="canvas" class="canvas" width="512" height="512"></canvas>
         <div>
             <div class="editorBlock">
@@ -13,7 +17,7 @@
                             v-for="(dot, dotIndex) in dotLine"
                             :key="dotIndex"
                             @mousedown="onClickDot(dot)"
-                            @mouseover="onOverDot(dot)"
+                            @dragover="onOverDot(dot)"
                             class="col"
                             :style="{ backgroundColor: dot.color }"
                         ></div>
@@ -24,13 +28,15 @@
                 </div>
             </div>
             <div class="pickerBtnBrock">
-                <div class="btn" @click="pickerComponent = 'ChromePicker'">Chrome</div>
-                <div class="btn" @click="pickerComponent = 'PhotoshopPicker'">Photoshop</div>
-                <div class="btn" @click="pickerComponent = 'MaterialPicker'">Material</div>
-                <div class="btn" @click="pickerComponent = 'CompactPicker'">Compact</div>
-                <div class="btn" @click="pickerComponent = 'SwatchesPicker'">Swatches</div>
-                <div class="btn" @click="pickerComponent = 'SliderPicker'">Slider</div>
-                <div class="btn" @click="pickerComponent = 'SketchPicker'">Sketch</div>
+                <div
+                    v-for="picker in pickerList"
+                    :key="picker"
+                    class="btn"
+                    :class="{ active: isAcivePickerBtn(picker) }"
+                    @click="pickerComponent = picker"
+                >
+                    {{ createPickerName(picker) }}
+                </div>
             </div>
             <div class="colorHistoryBrock">
                 <div
@@ -55,9 +61,10 @@
                 </div>
             </div>
             <div class="fileBtnBrock">
-                <div class="btn" @click="onClickDownLoad">download</div>
-                <div class="btn" @click="onClickLoadBtn">load json</div>
-                <div class="btn" @click="onClickPingDownLoad">png download</div>
+                <div class="btn" @click="onClickDownLoad">Download</div>
+                <div class="btn" @click="onClickLoadBtn">Load JSON</div>
+                <div class="btn" @click="onClickPngDownLoad">PNG Download</div>
+                <div class="btn" @click="onClickDemo">Demo</div>
             </div>
             <input
                 ref="inputFile"
@@ -72,7 +79,16 @@
 
 <script lang="ts">
 import { Component, Watch, Vue } from "vue-property-decorator";
-import { Chrome, Photoshop, Material, Compact, Swatches, Slider, Sketch } from "vue-color";
+import {
+    Chrome,
+    Photoshop,
+    Material,
+    Compact,
+    Swatches,
+    Slider,
+    Sketch,
+} from "vue-color";
+import Demo from "./Demo.vue";
 
 type dotList = [{ color: string }[]?];
 
@@ -84,7 +100,8 @@ type dotList = [{ color: string }[]?];
         CompactPicker: Compact,
         SwatchesPicker: Swatches,
         SliderPicker: Slider,
-        SketchPicker: Sketch
+        SketchPicker: Sketch,
+        Demo,
     },
 })
 export default class DotEditor extends Vue {
@@ -94,9 +111,20 @@ export default class DotEditor extends Vue {
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
     pickerComponent = "ChromePicker";
-    canvas?:HTMLCanvasElement;
+    pickerList = [
+        "ChromePicker",
+        "PhotoshopPicker",
+        "MaterialPicker",
+        "CompactPicker",
+        "SwatchesPicker",
+        "SliderPicker",
+        "SketchPicker",
+    ];
+    canvas?: HTMLCanvasElement;
+    showDemoModal: boolean = false;
 
     created() {
+        // 空の256ドット配列を作成
         for (let i = 1; i <= 16; i++) {
             const arr = [];
             for (let i = 1; i <= 16; i++) {
@@ -107,7 +135,7 @@ export default class DotEditor extends Vue {
     }
     mounted() {
         this.inputFileElement = this.$refs.inputFile as HTMLInputElement;
-        this.canvas = document.querySelector('#canvas') as HTMLCanvasElement;
+        this.canvas = document.querySelector("#canvas") as HTMLCanvasElement;
     }
     changeColor(dot: { color: string }) {
         if (this.isEraserMode) {
@@ -124,16 +152,25 @@ export default class DotEditor extends Vue {
             }
         }
     }
+    isAcivePickerBtn(pickerName: string): boolean {
+        return pickerName === this.pickerComponent;
+    }
+    createPickerName(name: string): string {
+        return name.split("Picker")[0];
+    }
+    // clickとoverイベントを両方取得
     onClickDot(dot: { color: string }): void {
         this.changeColor(dot);
     }
     onOverDot(dot: { color: string }): void {
         this.changeColor(dot);
     }
+    // 履歴からの色変え
     onClickColorHistory(color: string): void {
         this.isEraserMode = false;
         this.nowColor = { hex: color };
     }
+    // 消しゴム
     onClickEraser() {
         this.isEraserMode = !this.isEraserMode;
     }
@@ -145,12 +182,14 @@ export default class DotEditor extends Vue {
         };
         link.href =
             "data:text/plain," + encodeURIComponent(JSON.stringify(data));
+        // ファイル名は取り合えずUNIXTIME
         link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
         link.click();
     }
-    onClickPingDownLoad(): void {
-        let link:HTMLAnchorElement = document.createElement("a");
+    onClickPngDownLoad(): void {
+        let link: HTMLAnchorElement = document.createElement("a");
         link.href = this.canvas ? this.canvas.toDataURL("image/png") : "";
+        // ファイル名は取り合えずUNIXTIME
         link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
         link.click();
     }
@@ -171,22 +210,34 @@ export default class DotEditor extends Vue {
     onClickLoadBtn() {
         if (this.inputFileElement) this.inputFileElement.click();
     }
+    onClickDemo() {
+        this.showDemoModal = true;
+    }
+    onClickDemoClose() {
+        this.showDemoModal = false;
+    }
+
+    // canvas描画
     drowCanvas() {
         // const canvas:HTMLCanvasElement | null = document.querySelector('#canvas');
-        let ctx:CanvasRenderingContext2D | null = this.canvas ? this.canvas.getContext('2d') : null;
-        if(ctx !== null && this.canvas) ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let ctx: CanvasRenderingContext2D | null = this.canvas
+            ? this.canvas.getContext("2d")
+            : null;
+        if (ctx !== null && this.canvas)
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.dotList.forEach((list, listIndex) => {
-            if(list){
+            if (list) {
                 list.forEach((val, valIndex) => {
-                    if(val.color && ctx !== null) {
+                    if (val.color && ctx !== null) {
                         ctx.fillStyle = val.color;
-                        ctx.fillRect(valIndex*32, listIndex*32, 32, 32);
+                        ctx.fillRect(valIndex * 32, listIndex * 32, 32, 32);
                     }
                 });
             }
         });
     }
 
+    // どの状態から色変えしても描画モードに切り替える
     @Watch("nowColor.hex")
     onChangeNewColor() {
         this.isEraserMode = false;
