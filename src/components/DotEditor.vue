@@ -17,7 +17,7 @@
                             v-for="(dot, dotIndex) in dotLine"
                             :key="dotIndex"
                             @mousedown="onClickDot(dot)"
-                            @dragover="onOverDot(dot)"
+                            @mouseover="onOverDot(dot)"
                             class="col"
                             :style="{ backgroundColor: dot.color }"
                         ></div>
