@@ -5,6 +5,7 @@
             <div class="btn close" @click="$emit('onclick-close-btn')">×</div>
             <div class="btn" @click="onClickSetPngFile()">Set Png File</div>
             <div class="btn" @click="onClickStart()">Start</div>
+            <div class="btn" @click="onClickReset()">Reset</div>
             <input
                 ref="inputPngFile"
                 style="display: none;"
@@ -22,6 +23,7 @@ import { Component, Vue } from "vue-property-decorator";
 export default class Demo extends Vue {
     inputPngFileElement?: HTMLInputElement;
     pngFileList: string[] = [];
+    pngIntervalId: number = 0;
 
     mounted() {
         this.inputPngFileElement = this.$refs.inputPngFile as HTMLInputElement;
@@ -40,16 +42,20 @@ export default class Demo extends Vue {
     }
     onClickStart() {
         const leftBox = document.querySelector(".leftBox");
-        if (leftBox) {
+        if (leftBox && this.pngFileList.length > 0) {
             const maxCount = this.pngFileList.length;
             let i: number = 0;
-            setInterval(() => {
+            this.pngIntervalId = window.setInterval(() => {
                 if (i >= maxCount) i = 0;
                 leftBox.innerHTML =
                     '<img width="300" src="' + this.pngFileList[i] + '">';
                 i++;
             }, 300);
         }
+    }
+    onClickReset(){
+        this.pngFileList = [];
+        window.clearInterval(this.pngIntervalId);
     }
 }
 </script>
