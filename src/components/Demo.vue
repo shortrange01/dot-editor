@@ -2,9 +2,7 @@
     <div class="demo">
         <div class="leftBox"></div>
         <div class="rightBox">
-            <div class="btn close" @click="$emit('onClickDemoClose')">
-                ×
-            </div>
+            <div class="btn close" @click="$emit('onclick-close-btn')">×</div>
             <div class="btn" @click="onClickSetPngFile()">Set Png File</div>
             <div class="btn" @click="onClickStart()">Start</div>
             <input
@@ -12,7 +10,7 @@
                 style="display: none;"
                 @change="onChangePngFile"
                 type="file"
-                value=""
+                value
             />
         </div>
     </div>

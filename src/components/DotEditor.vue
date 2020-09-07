@@ -1,18 +1,11 @@
 <template>
     <div class="container dotEditor">
-        <demo
-            v-show="showDemoModal"
-            @onClickDemoClose="onClickDemoClose"
-        ></demo>
+        <demo v-show="showDemoModal" @onclick-close-btn="closeDemoModal"></demo>
         <canvas id="canvas" class="canvas" width="512" height="512"></canvas>
         <div>
             <div class="editorBlock">
                 <div class="editorGrid">
-                    <div
-                        v-for="(dotLine, dotLineIndex) in dotList"
-                        :key="dotLineIndex"
-                        class="row"
-                    >
+                    <div v-for="(dotLine, dotLineIndex) in dotList" :key="dotLineIndex" class="row">
                         <div
                             v-for="(dot, dotIndex) in dotLine"
                             :key="dotIndex"
@@ -34,9 +27,7 @@
                     class="btn"
                     :class="{ active: isAcivePickerBtn(picker) }"
                     @click="pickerComponent = picker"
-                >
-                    {{ createPickerName(picker) }}
-                </div>
+                >{{ createPickerName(picker) }}</div>
             </div>
             <div class="colorHistoryBrock">
                 <div
@@ -47,16 +38,18 @@
                     class="colorHistory"
                     :class="{ active: !isEraserMode }"
                 ></div>
-                <div
-                    class="eraser"
-                    :class="{ active: isEraserMode }"
-                    @click="onClickEraser()"
-                >
+                <div class="eraser" :class="{ active: isEraserMode }" @click="onClickEraser()">
                     <div class="left"></div>
                     <div class="right">
-                        <div class="top"><p>PLASTIC ERASER</p></div>
-                        <div class="middle"><p>MONO</p></div>
-                        <div class="bottom"><p>TOMBO</p></div>
+                        <div class="top">
+                            <p>PLASTIC ERASER</p>
+                        </div>
+                        <div class="middle">
+                            <p>MONO</p>
+                        </div>
+                        <div class="bottom">
+                            <p>TOMBO</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -66,13 +59,7 @@
                 <div class="btn" @click="onClickPngDownLoad">PNG Download</div>
                 <div class="btn" @click="onClickDemo">Demo</div>
             </div>
-            <input
-                ref="inputFile"
-                style="display: none;"
-                @change="onChangeFile"
-                type="file"
-                value=""
-            />
+            <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
         </div>
     </div>
 </template>
@@ -86,7 +73,7 @@ import {
     Compact,
     Swatches,
     Slider,
-    Sketch,
+    Sketch
 } from "vue-color";
 import Demo from "./Demo.vue";
 
@@ -101,8 +88,8 @@ type dotList = [{ color: string }[]?];
         SwatchesPicker: Swatches,
         SliderPicker: Slider,
         SketchPicker: Sketch,
-        Demo,
-    },
+        Demo
+    }
 })
 export default class DotEditor extends Vue {
     dotList: dotList = [];
@@ -118,7 +105,7 @@ export default class DotEditor extends Vue {
         "CompactPicker",
         "SwatchesPicker",
         "SliderPicker",
-        "SketchPicker",
+        "SketchPicker"
     ];
     canvas?: HTMLCanvasElement;
     showDemoModal: boolean = false;
@@ -178,7 +165,7 @@ export default class DotEditor extends Vue {
         const link: HTMLAnchorElement = document.createElement("a");
         const data: { dotList: dotList; colorHistory: string[] } = {
             dotList: this.dotList,
-            colorHistory: this.colorHistory,
+            colorHistory: this.colorHistory
         };
         link.href =
             "data:text/plain," + encodeURIComponent(JSON.stringify(data));
@@ -213,7 +200,7 @@ export default class DotEditor extends Vue {
     onClickDemo() {
         this.showDemoModal = true;
     }
-    onClickDemoClose() {
+    closeDemoModal() {
         this.showDemoModal = false;
     }
 
