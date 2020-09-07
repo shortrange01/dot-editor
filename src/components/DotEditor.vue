@@ -54,10 +54,10 @@
                 </div>
             </div>
             <div class="fileBtnBrock">
-                <div class="btn" @click="onClickDownLoad">Download</div>
+                <div class="btn" @click="onClickDownLoadBtn">Download</div>
                 <div class="btn" @click="onClickLoadBtn">Load JSON</div>
-                <div class="btn" @click="onClickPngDownLoad">PNG Download</div>
-                <div class="btn" @click="onClickDemo">Demo</div>
+                <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
+                <div class="btn" @click="onClickDemoBtn">Demo</div>
             </div>
             <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
         </div>
@@ -161,7 +161,7 @@ export default class DotEditor extends Vue {
     onClickEraser() {
         this.isEraserMode = !this.isEraserMode;
     }
-    onClickDownLoad(): void {
+    onClickDownLoadBtn(): void {
         const link: HTMLAnchorElement = document.createElement("a");
         const data: { dotList: dotList; colorHistory: string[] } = {
             dotList: this.dotList,
@@ -173,7 +173,7 @@ export default class DotEditor extends Vue {
         link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
         link.click();
     }
-    onClickPngDownLoad(): void {
+    onClickPngDownLoadBtn(): void {
         let link: HTMLAnchorElement = document.createElement("a");
         link.href = this.canvas ? this.canvas.toDataURL("image/png") : "";
         // ファイル名は取り合えずUNIXTIME
@@ -197,7 +197,7 @@ export default class DotEditor extends Vue {
     onClickLoadBtn() {
         if (this.inputFileElement) this.inputFileElement.click();
     }
-    onClickDemo() {
+    onClickDemoBtn() {
         this.showDemoModal = true;
     }
     closeDemoModal() {
