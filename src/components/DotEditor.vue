@@ -10,7 +10,8 @@
                             v-for="(dot, dotIndex) in dotLine"
                             :key="dotIndex"
                             @mousedown="onClickDot(dot)"
-                            @mouseover="onOverDot(dot)"
+                            @mouseover="onOverDot($event, dot)"
+                            
                             class="col"
                             :style="{ backgroundColor: dot.color }"
                         ></div>
@@ -149,7 +150,10 @@ export default class DotEditor extends Vue {
     onClickDot(dot: { color: string }): void {
         this.changeColor(dot);
     }
-    onOverDot(dot: { color: string }): void {
+    onOverDot(event:any, dot: { color: string }): void {
+        if (event.buttons === 0) {
+            return;
+        }
         this.changeColor(dot);
     }
     // 履歴からの色変え
