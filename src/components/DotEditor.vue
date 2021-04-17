@@ -1,6 +1,6 @@
 <template>
     <div class="container dotEditor">
-        <demo v-show="showDemoModal" @onclick-close-btn="closeDemoModal"></demo>
+        <StepAnimationModal v-show="showStepAnimationModal" @clickCloseBtn="closeStepAnimationModal" />
         <CanvasBlock ref="canvasBlock" :dot-list="dotList" />
         <div>
             <EditorBlock
@@ -22,7 +22,7 @@
                 <div class="btn" @click="onClickDownLoadBtn">Download</div>
                 <div class="btn" @click="onClickLoadBtn">Load JSON</div>
                 <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
-                <div class="btn" @click="onClickDemoBtn">Demo</div>
+                <div class="btn" @click="openStepAnimationModal">Demo</div>
             </div>
             <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
         </div>
@@ -35,7 +35,7 @@ import CanvasBlock from './CanvasBlock.vue';
 import EditorBlock, { DotList } from './EditorBlock.vue';
 import PickerBtnBlock from './PickerBtnBlock.vue';
 import ColorHistoryBlock from './ColorHistoryBlock.vue';
-import Demo from './Demo.vue';
+import StepAnimationModal from './StepAnimationModal.vue';
 
 const DotLineCount = 16; // １行分のドット数
 const MaxHistoryCount = 17; // 色選択履歴の最大保持数
@@ -46,7 +46,7 @@ const MaxHistoryCount = 17; // 色選択履歴の最大保持数
         EditorBlock,
         PickerBtnBlock,
         ColorHistoryBlock,
-        Demo,
+        StepAnimationModal,
     },
 })
 export default class DotEditor extends Vue {
@@ -54,7 +54,7 @@ export default class DotEditor extends Vue {
     colorHistory: string[] = [];
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
-    showDemoModal: boolean = false;
+    showStepAnimationModal: boolean = false;
     pickerComponent = 'ChromePicker';
 
     $refs!: {
@@ -149,12 +149,12 @@ export default class DotEditor extends Vue {
         if (this.inputFileElement) this.inputFileElement.click();
     }
 
-    onClickDemoBtn() {
-        this.showDemoModal = true;
+    openStepAnimationModal() {
+        this.showStepAnimationModal = true;
     }
 
-    closeDemoModal() {
-        this.showDemoModal = false;
+    closeStepAnimationModal() {
+        this.showStepAnimationModal = false;
     }
 
     setPickerComponent(picker: string) {
