@@ -10,41 +10,14 @@
                 @changeColor="changeColor"
                 @selectNewColor="disableElaser"
             />
-            <div class="pickerBtnBlock">
-                <div
-                    v-for="picker in pickerList"
-                    :key="picker"
-                    class="btn"
-                    :class="{ active: isAcivePickerBtn(picker) }"
-                    @click="pickerComponent = picker"
-                >
-                    {{ createPickerName(picker) }}
-                </div>
-            </div>
-            <div class="colorHistoryBlock">
-                <div
-                    v-for="(color, colorIndex) in colorHistory"
-                    :key="colorIndex"
-                    @click="onClickColorHistory(color)"
-                    :style="{ backgroundColor: color }"
-                    class="colorHistory"
-                    :class="{ active: !isEraserMode }"
-                ></div>
-                <div class="eraser" :class="{ active: isEraserMode }" @click="onClickEraser()">
-                    <div class="left"></div>
-                    <div class="right">
-                        <div class="top">
-                            <p>PLASTIC ERASER</p>
-                        </div>
-                        <div class="middle">
-                            <p>MONO</p>
-                        </div>
-                        <div class="bottom">
-                            <p>TOMBO</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <PickerBtnBlock :picker-component="pickerComponent" @selectPicker="setPickerComponent" />
+            <ColorHistoryBlock
+                :color-history="colorHistory"
+                :is-eraser-mode="isEraserMode"
+                @clickEraser="toggleEraserMode"
+                @selectNewColor="selectNewColor"
+            />
+
             <div class="fileBtnBlock">
                 <div class="btn" @click="onClickDownLoadBtn">Download</div>
                 <div class="btn" @click="onClickLoadBtn">Load JSON</div>
@@ -59,11 +32,15 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import EditorBlock, { DotList } from './EditorBlock.vue';
+import PickerBtnBlock from './PickerBtnBlock.vue';
+import ColorHistoryBlock from './ColorHistoryBlock.vue';
 import Demo from './Demo.vue';
 
 @Component({
     components: {
         EditorBlock,
+        PickerBtnBlock,
+        ColorHistoryBlock,
         Demo,
     },
 })
@@ -75,15 +52,6 @@ export default class DotEditor extends Vue {
     canvas?: HTMLCanvasElement;
     showDemoModal: boolean = false;
     pickerComponent = 'ChromePicker';
-    pickerList = [
-        'ChromePicker',
-        'PhotoshopPicker',
-        'MaterialPicker',
-        'CompactPicker',
-        'SwatchesPicker',
-        'SliderPicker',
-        'SketchPicker',
-    ];
 
     $refs!: {
         editorBlock: EditorBlock;
@@ -119,19 +87,12 @@ export default class DotEditor extends Vue {
             }
         }
     }
-    isAcivePickerBtn(pickerName: string): boolean {
-        return pickerName === this.pickerComponent;
-    }
-    createPickerName(name: string): string {
-        return name.split('Picker')[0];
-    }
-    // 履歴からの色変え
-    onClickColorHistory(color: string): void {
-        this.isEraserMode = false;
+    // 色変え
+    selectNewColor(color: string): void {
         this.$refs.editorBlock.nowColor = { hex: color };
     }
     // 消しゴム
-    onClickEraser() {
+    toggleEraserMode() {
         this.isEraserMode = !this.isEraserMode;
     }
     onClickDownLoadBtn(): void {
@@ -191,6 +152,10 @@ export default class DotEditor extends Vue {
                 });
             }
         });
+    }
+
+    setPickerComponent(picker: string) {
+        this.pickerComponent = picker;
     }
 
     disableElaser() {

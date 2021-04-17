@@ -5,7 +5,7 @@
                 <div
                     v-for="(dot, dotIndex) in dotLine"
                     :key="dotIndex"
-                    @mousedown="changeColor(dot)"
+                    @mousedown="$emit('changeColor', dot)"
                     @mouseover="checkMouseBtnAndChangeColor($event, dot)"
                     class="col"
                     :style="{ backgroundColor: dot.color }"
@@ -41,15 +41,11 @@ export default class EditorBlock extends Vue {
     @Prop({ type: Array }) dotList?: DotList;
     @Prop({ type: String }) pickerComponent?: string;
 
-    // clickとoverイベントを両方取得
-    changeColor(dot: { color: string }): void {
-        this.$emit('changeColor', dot);
-    }
     checkMouseBtnAndChangeColor(event: MouseEventInit, dot: { color: string }): void {
         if (event.buttons === 0) {
             return;
         }
-        this.changeColor(dot);
+        this.$emit('changeColor', dot);
     }
 
     @Watch('nowColor.hex')
