@@ -3,23 +3,13 @@
         <demo v-show="showDemoModal" @onclick-close-btn="closeDemoModal"></demo>
         <canvas id="canvas" class="canvas" width="512" height="512"></canvas>
         <div>
-            <div class="editorBlock">
-                <div class="editorGrid">
-                    <div v-for="(dotLine, dotLineIndex) in dotList" :key="dotLineIndex" class="row">
-                        <div
-                            v-for="(dot, dotIndex) in dotLine"
-                            :key="dotIndex"
-                            @mousedown="onClickDot(dot)"
-                            @mouseover="onOverDot($event, dot)"
-                            class="col"
-                            :style="{ backgroundColor: dot.color }"
-                        ></div>
-                    </div>
-                </div>
-                <div class="pickerWrap">
-                    <component :is="pickerComponent" v-model="nowColor" />
-                </div>
-            </div>
+            <EditorBlock
+                ref="editorBlock"
+                :picker-component="pickerComponent"
+                :dot-list="dotList"
+                @changeColor="changeColor"
+                @selectNewColor="disableElaser"
+            />
             <div class="pickerBtnBlock">
                 <div
                     v-for="picker in pickerList"
@@ -67,30 +57,23 @@
 </template>
 
 <script lang="ts">
-import { Component, Watch, Vue } from 'vue-property-decorator';
-import { Chrome, Photoshop, Material, Compact, Swatches, Slider, Sketch } from 'vue-color';
+import { Component, Vue } from 'vue-property-decorator';
+import EditorBlock, { DotList } from './EditorBlock.vue';
 import Demo from './Demo.vue';
-
-type dotList = [{ color: string }[]?];
 
 @Component({
     components: {
-        ChromePicker: Chrome,
-        PhotoshopPicker: Photoshop,
-        MaterialPicker: Material,
-        CompactPicker: Compact,
-        SwatchesPicker: Swatches,
-        SliderPicker: Slider,
-        SketchPicker: Sketch,
+        EditorBlock,
         Demo,
     },
 })
 export default class DotEditor extends Vue {
-    dotList: dotList = [];
+    dotList: DotList = [];
     colorHistory: string[] = [];
-    nowColor = { hex: '#000' };
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
+    canvas?: HTMLCanvasElement;
+    showDemoModal: boolean = false;
     pickerComponent = 'ChromePicker';
     pickerList = [
         'ChromePicker',
@@ -101,8 +84,11 @@ export default class DotEditor extends Vue {
         'SliderPicker',
         'SketchPicker',
     ];
-    canvas?: HTMLCanvasElement;
-    showDemoModal: boolean = false;
+
+    $refs!: {
+        editorBlock: EditorBlock;
+        inputFile: HTMLInputElement;
+    };
 
     created() {
         // 空の256ドット配列を作成
@@ -115,7 +101,7 @@ export default class DotEditor extends Vue {
         }
     }
     mounted() {
-        this.inputFileElement = this.$refs.inputFile as HTMLInputElement;
+        this.inputFileElement = this.$refs.inputFile;
         this.canvas = document.querySelector('#canvas') as HTMLCanvasElement;
     }
     changeColor(dot: { color: string }) {
@@ -124,7 +110,7 @@ export default class DotEditor extends Vue {
             this.drowCanvas();
             return;
         }
-        dot.color = this.nowColor.hex;
+        dot.color = this.$refs.editorBlock.nowColor.hex;
         this.drowCanvas();
         if (this.colorHistory.indexOf(dot.color) < 0) {
             this.colorHistory.push(dot.color);
@@ -139,20 +125,10 @@ export default class DotEditor extends Vue {
     createPickerName(name: string): string {
         return name.split('Picker')[0];
     }
-    // clickとoverイベントを両方取得
-    onClickDot(dot: { color: string }): void {
-        this.changeColor(dot);
-    }
-    onOverDot(event: any, dot: { color: string }): void {
-        if (event.buttons === 0) {
-            return;
-        }
-        this.changeColor(dot);
-    }
     // 履歴からの色変え
     onClickColorHistory(color: string): void {
         this.isEraserMode = false;
-        this.nowColor = { hex: color };
+        this.$refs.editorBlock.nowColor = { hex: color };
     }
     // 消しゴム
     onClickEraser() {
@@ -160,7 +136,7 @@ export default class DotEditor extends Vue {
     }
     onClickDownLoadBtn(): void {
         const link: HTMLAnchorElement = document.createElement('a');
-        const data: { dotList: dotList; colorHistory: string[] } = {
+        const data: { dotList: DotList; colorHistory: string[] } = {
             dotList: this.dotList,
             colorHistory: this.colorHistory,
         };
@@ -217,9 +193,7 @@ export default class DotEditor extends Vue {
         });
     }
 
-    // どの状態から色変えしても描画モードに切り替える
-    @Watch('nowColor.hex')
-    onChangeNewColor() {
+    disableElaser() {
         this.isEraserMode = false;
     }
 }
