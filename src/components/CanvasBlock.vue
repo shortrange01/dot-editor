@@ -33,5 +33,13 @@ export default class CanvasBlock extends Vue {
             }
         });
     }
+
+    downloadPngFile(): void {
+        let link: HTMLAnchorElement = document.createElement('a');
+        link.href = this.canvas ? this.canvas.toDataURL('image/png') : '';
+        // ファイル名は取り合えずUNIXTIME
+        link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
+        link.click();
+    }
 }
 </script>
