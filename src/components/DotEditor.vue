@@ -19,10 +19,10 @@
             />
 
             <div class="fileBtnBlock">
-                <div class="btn" @click="onClickDownLoadBtn">Download</div>
+                <DownloadBtn :dot-list="dotList" :color-history="colorHistory" />
                 <div class="btn" @click="onClickLoadBtn">Load JSON</div>
                 <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
-                <div class="btn" @click="openStepAnimationModal">Demo</div>
+                <div class="btn" @click="openStepAnimationModal">Step Anime</div>
             </div>
             <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
         </div>
@@ -36,6 +36,7 @@ import EditorBlock, { DotList } from './EditorBlock.vue';
 import PickerBtnBlock from './PickerBtnBlock.vue';
 import ColorHistoryBlock from './ColorHistoryBlock.vue';
 import StepAnimationModal from './StepAnimationModal.vue';
+import DownloadBtn from './DownloadBtn.vue';
 
 const DotLineCount = 16; // １行分のドット数
 const MaxHistoryCount = 17; // 色選択履歴の最大保持数
@@ -47,6 +48,7 @@ const MaxHistoryCount = 17; // 色選択履歴の最大保持数
         PickerBtnBlock,
         ColorHistoryBlock,
         StepAnimationModal,
+        DownloadBtn,
     },
 })
 export default class DotEditor extends Vue {
@@ -107,18 +109,6 @@ export default class DotEditor extends Vue {
     // 消しゴム機能の on/off
     toggleEraserMode() {
         this.isEraserMode = !this.isEraserMode;
-    }
-
-    onClickDownLoadBtn(): void {
-        const link: HTMLAnchorElement = document.createElement('a');
-        const data: { dotList: DotList; colorHistory: string[] } = {
-            dotList: this.dotList,
-            colorHistory: this.colorHistory,
-        };
-        link.href = 'data:text/plain,' + encodeURIComponent(JSON.stringify(data));
-        // ファイル名は取り合えずUNIXTIME
-        link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
-        link.click();
     }
 
     onClickPngDownLoadBtn(): void {
