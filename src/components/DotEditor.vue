@@ -1,237 +1,153 @@
 <template>
     <div class="container dotEditor">
-        <demo v-show="showDemoModal" @onclick-close-btn="closeDemoModal"></demo>
-        <canvas id="canvas" class="canvas" width="512" height="512"></canvas>
+        <StepAnimationModal v-show="showStepAnimationModal" @clickCloseBtn="closeStepAnimationModal" />
+        <CanvasBlock ref="canvasBlock" :dot-list="dotList" />
         <div>
-            <div class="editorBlock">
-                <div class="editorGrid">
-                    <div v-for="(dotLine, dotLineIndex) in dotList" :key="dotLineIndex" class="row">
-                        <div
-                            v-for="(dot, dotIndex) in dotLine"
-                            :key="dotIndex"
-                            @mousedown="onClickDot(dot)"
-                            @mouseover="onOverDot($event, dot)"
-                            
-                            class="col"
-                            :style="{ backgroundColor: dot.color }"
-                        ></div>
-                    </div>
-                </div>
-                <div class="pickerWrap">
-                    <component :is="pickerComponent" v-model="nowColor" />
-                </div>
+            <EditorBlock
+                ref="editorBlock"
+                :picker-component="pickerComponent"
+                :dot-list="dotList"
+                @setDotColor="setDotColor"
+                @selectNewColor="disableElaser"
+            />
+            <PickerBtnBlock :picker-component="pickerComponent" @selectPicker="setPickerComponent" />
+            <ColorHistoryBlock
+                :color-history="colorHistory"
+                :is-eraser-mode="isEraserMode"
+                @clickEraser="toggleEraserMode"
+                @selectNewColor="selectNewColor"
+            />
+
+            <div class="fileBtnBlock">
+                <DownloadJsonFileBtn :dot-list="dotList" :color-history="colorHistory" />
+                <div class="btn" @click="openFileSelector">Load JSON</div>
+                <div class="btn" @click="$refs.canvasBlock.downloadPngFile()">PNG Download</div>
+                <div class="btn" @click="openStepAnimationModal">Step Anime</div>
             </div>
-            <div class="pickerBtnBrock">
-                <div
-                    v-for="picker in pickerList"
-                    :key="picker"
-                    class="btn"
-                    :class="{ active: isAcivePickerBtn(picker) }"
-                    @click="pickerComponent = picker"
-                >{{ createPickerName(picker) }}</div>
-            </div>
-            <div class="colorHistoryBrock">
-                <div
-                    v-for="(color, colorIndex) in colorHistory"
-                    :key="colorIndex"
-                    @click="onClickColorHistory(color)"
-                    :style="{ backgroundColor: color }"
-                    class="colorHistory"
-                    :class="{ active: !isEraserMode }"
-                ></div>
-                <div class="eraser" :class="{ active: isEraserMode }" @click="onClickEraser()">
-                    <div class="left"></div>
-                    <div class="right">
-                        <div class="top">
-                            <p>PLASTIC ERASER</p>
-                        </div>
-                        <div class="middle">
-                            <p>MONO</p>
-                        </div>
-                        <div class="bottom">
-                            <p>TOMBO</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="fileBtnBrock">
-                <div class="btn" @click="onClickDownLoadBtn">Download</div>
-                <div class="btn" @click="onClickLoadBtn">Load JSON</div>
-                <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
-                <div class="btn" @click="onClickDemoBtn">Demo</div>
-            </div>
-            <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
+            <input ref="inputFile" style="display: none;" @change="loadJsonFile($event)" type="file" value />
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { Component, Watch, Vue } from "vue-property-decorator";
-import {
-    Chrome,
-    Photoshop,
-    Material,
-    Compact,
-    Swatches,
-    Slider,
-    Sketch
-} from "vue-color";
-import Demo from "./Demo.vue";
+import { Component, Vue } from 'vue-property-decorator';
+import CanvasBlock from './CanvasBlock.vue';
+import EditorBlock, { DotList } from './EditorBlock.vue';
+import PickerBtnBlock from './PickerBtnBlock.vue';
+import ColorHistoryBlock from './ColorHistoryBlock.vue';
+import StepAnimationModal from './StepAnimationModal.vue';
+import DownloadJsonFileBtn from './DownloadJsonFileBtn.vue';
 
-type dotList = [{ color: string }[]?];
+const DotLineCount = 16; // １行分のドット数
+const MaxHistoryCount = 17; // 色選択履歴の最大保持数
+
+interface FileAPIEventTarget extends EventTarget {
+    result: string;
+}
 
 @Component({
     components: {
-        ChromePicker: Chrome,
-        PhotoshopPicker: Photoshop,
-        MaterialPicker: Material,
-        CompactPicker: Compact,
-        SwatchesPicker: Swatches,
-        SliderPicker: Slider,
-        SketchPicker: Sketch,
-        Demo
-    }
+        CanvasBlock,
+        EditorBlock,
+        PickerBtnBlock,
+        ColorHistoryBlock,
+        StepAnimationModal,
+        DownloadJsonFileBtn,
+    },
 })
 export default class DotEditor extends Vue {
-    dotList: dotList = [];
+    dotList: DotList = [];
     colorHistory: string[] = [];
-    nowColor = { hex: "#000" };
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
-    pickerComponent = "ChromePicker";
-    pickerList = [
-        "ChromePicker",
-        "PhotoshopPicker",
-        "MaterialPicker",
-        "CompactPicker",
-        "SwatchesPicker",
-        "SliderPicker",
-        "SketchPicker"
-    ];
-    canvas?: HTMLCanvasElement;
-    showDemoModal: boolean = false;
+    showStepAnimationModal: boolean = false;
+    pickerComponent = 'ChromePicker';
+
+    $refs!: {
+        canvasBlock: CanvasBlock;
+        editorBlock: EditorBlock;
+        inputFile: HTMLInputElement;
+    };
 
     created() {
+        this.initDotList();
+    }
+
+    mounted() {
+        this.inputFileElement = this.$refs.inputFile;
+    }
+
+    initDotList() {
         // 空の256ドット配列を作成
-        for (let i = 1; i <= 16; i++) {
+        for (let i = 1; i <= DotLineCount; i++) {
             const arr = [];
-            for (let i = 1; i <= 16; i++) {
-                arr.push({ color: "" });
+            for (let i = 1; i <= DotLineCount; i++) {
+                arr.push({ color: '' });
             }
             this.dotList.push(arr);
         }
     }
-    mounted() {
-        this.inputFileElement = this.$refs.inputFile as HTMLInputElement;
-        this.canvas = document.querySelector("#canvas") as HTMLCanvasElement;
+
+    setDotColor(dot: { color: string }) {
+        dot.color = this.isEraserMode ? '' : this.$refs.editorBlock.nowColor.hex;
+        this.$refs.canvasBlock.drowCanvas();
+        if (!this.isEraserMode) this.addHistoryColor(dot);
     }
-    changeColor(dot: { color: string }) {
-        if (this.isEraserMode) {
-            dot.color = "";
-            this.drowCanvas();
-            return;
-        }
-        dot.color = this.nowColor.hex;
-        this.drowCanvas();
+
+    addHistoryColor(dot: { color: string }) {
         if (this.colorHistory.indexOf(dot.color) < 0) {
             this.colorHistory.push(dot.color);
-            if (this.colorHistory.length > 17) {
+            if (this.colorHistory.length > MaxHistoryCount) {
                 this.colorHistory.shift();
             }
         }
     }
-    isAcivePickerBtn(pickerName: string): boolean {
-        return pickerName === this.pickerComponent;
+
+    selectNewColor(color: string): void {
+        this.$refs.editorBlock.nowColor = { hex: color };
     }
-    createPickerName(name: string): string {
-        return name.split("Picker")[0];
-    }
-    // clickとoverイベントを両方取得
-    onClickDot(dot: { color: string }): void {
-        this.changeColor(dot);
-    }
-    onOverDot(event:any, dot: { color: string }): void {
-        if (event.buttons === 0) {
-            return;
-        }
-        this.changeColor(dot);
-    }
-    // 履歴からの色変え
-    onClickColorHistory(color: string): void {
-        this.isEraserMode = false;
-        this.nowColor = { hex: color };
-    }
-    // 消しゴム
-    onClickEraser() {
+
+    toggleEraserMode() {
         this.isEraserMode = !this.isEraserMode;
     }
-    onClickDownLoadBtn(): void {
-        const link: HTMLAnchorElement = document.createElement("a");
-        const data: { dotList: dotList; colorHistory: string[] } = {
-            dotList: this.dotList,
-            colorHistory: this.colorHistory
-        };
-        link.href =
-            "data:text/plain," + encodeURIComponent(JSON.stringify(data));
-        // ファイル名は取り合えずUNIXTIME
-        link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
-        link.click();
-    }
-    onClickPngDownLoadBtn(): void {
-        let link: HTMLAnchorElement = document.createElement("a");
-        link.href = this.canvas ? this.canvas.toDataURL("image/png") : "";
-        // ファイル名は取り合えずUNIXTIME
-        link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
-        link.click();
-    }
-    onChangeFile(event: any): void {
-        if (event.currentTarget.value) {
+
+    loadJsonFile(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        if (target.files) {
             const reader: FileReader = new FileReader();
-            reader.readAsText(event.currentTarget.files[0]);
-            reader.addEventListener("load", (event: any) => {
+            reader.readAsText(target.files[0]);
+            reader.addEventListener('load', (event: ProgressEvent) => {
                 // value を消さないと同じファイルを連続で読み込む際に change event が発火しない
-                if (this.inputFileElement) this.inputFileElement.value = "";
-                const result = JSON.parse(event.currentTarget.result);
+                if (this.inputFileElement) this.inputFileElement.value = '';
+                const target = event.target as FileAPIEventTarget;
+                const result = JSON.parse(target.result);
                 this.dotList = result.dotList;
                 this.colorHistory = result.colorHistory;
-                this.drowCanvas();
+                this.$nextTick().then(() => {
+                    this.$refs.canvasBlock.drowCanvas();
+                });
             });
         }
     }
-    onClickLoadBtn() {
-        if (this.inputFileElement) this.inputFileElement.click();
-    }
-    onClickDemoBtn() {
-        this.showDemoModal = true;
-    }
-    closeDemoModal() {
-        this.showDemoModal = false;
+
+    openStepAnimationModal() {
+        this.showStepAnimationModal = true;
     }
 
-    // canvas描画
-    drowCanvas() {
-        // const canvas:HTMLCanvasElement | null = document.querySelector('#canvas');
-        let ctx: CanvasRenderingContext2D | null = this.canvas
-            ? this.canvas.getContext("2d")
-            : null;
-        if (ctx !== null && this.canvas)
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.dotList.forEach((list, listIndex) => {
-            if (list) {
-                list.forEach((val, valIndex) => {
-                    if (val.color && ctx !== null) {
-                        ctx.fillStyle = val.color;
-                        ctx.fillRect(valIndex * 32, listIndex * 32, 32, 32);
-                    }
-                });
-            }
-        });
+    closeStepAnimationModal() {
+        this.showStepAnimationModal = false;
     }
 
-    // どの状態から色変えしても描画モードに切り替える
-    @Watch("nowColor.hex")
-    onChangeNewColor() {
+    setPickerComponent(picker: string) {
+        this.pickerComponent = picker;
+    }
+
+    disableElaser() {
         this.isEraserMode = false;
+    }
+
+    openFileSelector() {
+        if (this.inputFileElement) this.inputFileElement.click();
     }
 }
 </script>
