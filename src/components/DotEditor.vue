@@ -11,7 +11,6 @@
                             :key="dotIndex"
                             @mousedown="onClickDot(dot)"
                             @mouseover="onOverDot($event, dot)"
-                            
                             class="col"
                             :style="{ backgroundColor: dot.color }"
                         ></div>
@@ -21,16 +20,18 @@
                     <component :is="pickerComponent" v-model="nowColor" />
                 </div>
             </div>
-            <div class="pickerBtnBrock">
+            <div class="pickerBtnBlock">
                 <div
                     v-for="picker in pickerList"
                     :key="picker"
                     class="btn"
                     :class="{ active: isAcivePickerBtn(picker) }"
                     @click="pickerComponent = picker"
-                >{{ createPickerName(picker) }}</div>
+                >
+                    {{ createPickerName(picker) }}
+                </div>
             </div>
-            <div class="colorHistoryBrock">
+            <div class="colorHistoryBlock">
                 <div
                     v-for="(color, colorIndex) in colorHistory"
                     :key="colorIndex"
@@ -54,7 +55,7 @@
                     </div>
                 </div>
             </div>
-            <div class="fileBtnBrock">
+            <div class="fileBtnBlock">
                 <div class="btn" @click="onClickDownLoadBtn">Download</div>
                 <div class="btn" @click="onClickLoadBtn">Load JSON</div>
                 <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
@@ -66,17 +67,9 @@
 </template>
 
 <script lang="ts">
-import { Component, Watch, Vue } from "vue-property-decorator";
-import {
-    Chrome,
-    Photoshop,
-    Material,
-    Compact,
-    Swatches,
-    Slider,
-    Sketch
-} from "vue-color";
-import Demo from "./Demo.vue";
+import { Component, Watch, Vue } from 'vue-property-decorator';
+import { Chrome, Photoshop, Material, Compact, Swatches, Slider, Sketch } from 'vue-color';
+import Demo from './Demo.vue';
 
 type dotList = [{ color: string }[]?];
 
@@ -89,24 +82,24 @@ type dotList = [{ color: string }[]?];
         SwatchesPicker: Swatches,
         SliderPicker: Slider,
         SketchPicker: Sketch,
-        Demo
-    }
+        Demo,
+    },
 })
 export default class DotEditor extends Vue {
     dotList: dotList = [];
     colorHistory: string[] = [];
-    nowColor = { hex: "#000" };
+    nowColor = { hex: '#000' };
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
-    pickerComponent = "ChromePicker";
+    pickerComponent = 'ChromePicker';
     pickerList = [
-        "ChromePicker",
-        "PhotoshopPicker",
-        "MaterialPicker",
-        "CompactPicker",
-        "SwatchesPicker",
-        "SliderPicker",
-        "SketchPicker"
+        'ChromePicker',
+        'PhotoshopPicker',
+        'MaterialPicker',
+        'CompactPicker',
+        'SwatchesPicker',
+        'SliderPicker',
+        'SketchPicker',
     ];
     canvas?: HTMLCanvasElement;
     showDemoModal: boolean = false;
@@ -116,18 +109,18 @@ export default class DotEditor extends Vue {
         for (let i = 1; i <= 16; i++) {
             const arr = [];
             for (let i = 1; i <= 16; i++) {
-                arr.push({ color: "" });
+                arr.push({ color: '' });
             }
             this.dotList.push(arr);
         }
     }
     mounted() {
         this.inputFileElement = this.$refs.inputFile as HTMLInputElement;
-        this.canvas = document.querySelector("#canvas") as HTMLCanvasElement;
+        this.canvas = document.querySelector('#canvas') as HTMLCanvasElement;
     }
     changeColor(dot: { color: string }) {
         if (this.isEraserMode) {
-            dot.color = "";
+            dot.color = '';
             this.drowCanvas();
             return;
         }
@@ -144,13 +137,13 @@ export default class DotEditor extends Vue {
         return pickerName === this.pickerComponent;
     }
     createPickerName(name: string): string {
-        return name.split("Picker")[0];
+        return name.split('Picker')[0];
     }
     // clickとoverイベントを両方取得
     onClickDot(dot: { color: string }): void {
         this.changeColor(dot);
     }
-    onOverDot(event:any, dot: { color: string }): void {
+    onOverDot(event: any, dot: { color: string }): void {
         if (event.buttons === 0) {
             return;
         }
@@ -166,20 +159,19 @@ export default class DotEditor extends Vue {
         this.isEraserMode = !this.isEraserMode;
     }
     onClickDownLoadBtn(): void {
-        const link: HTMLAnchorElement = document.createElement("a");
+        const link: HTMLAnchorElement = document.createElement('a');
         const data: { dotList: dotList; colorHistory: string[] } = {
             dotList: this.dotList,
-            colorHistory: this.colorHistory
+            colorHistory: this.colorHistory,
         };
-        link.href =
-            "data:text/plain," + encodeURIComponent(JSON.stringify(data));
+        link.href = 'data:text/plain,' + encodeURIComponent(JSON.stringify(data));
         // ファイル名は取り合えずUNIXTIME
         link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
         link.click();
     }
     onClickPngDownLoadBtn(): void {
-        let link: HTMLAnchorElement = document.createElement("a");
-        link.href = this.canvas ? this.canvas.toDataURL("image/png") : "";
+        let link: HTMLAnchorElement = document.createElement('a');
+        link.href = this.canvas ? this.canvas.toDataURL('image/png') : '';
         // ファイル名は取り合えずUNIXTIME
         link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
         link.click();
@@ -188,9 +180,9 @@ export default class DotEditor extends Vue {
         if (event.currentTarget.value) {
             const reader: FileReader = new FileReader();
             reader.readAsText(event.currentTarget.files[0]);
-            reader.addEventListener("load", (event: any) => {
+            reader.addEventListener('load', (event: any) => {
                 // value を消さないと同じファイルを連続で読み込む際に change event が発火しない
-                if (this.inputFileElement) this.inputFileElement.value = "";
+                if (this.inputFileElement) this.inputFileElement.value = '';
                 const result = JSON.parse(event.currentTarget.result);
                 this.dotList = result.dotList;
                 this.colorHistory = result.colorHistory;
@@ -211,11 +203,8 @@ export default class DotEditor extends Vue {
     // canvas描画
     drowCanvas() {
         // const canvas:HTMLCanvasElement | null = document.querySelector('#canvas');
-        let ctx: CanvasRenderingContext2D | null = this.canvas
-            ? this.canvas.getContext("2d")
-            : null;
-        if (ctx !== null && this.canvas)
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        let ctx: CanvasRenderingContext2D | null = this.canvas ? this.canvas.getContext('2d') : null;
+        if (ctx !== null && this.canvas) ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.dotList.forEach((list, listIndex) => {
             if (list) {
                 list.forEach((val, valIndex) => {
@@ -229,7 +218,7 @@ export default class DotEditor extends Vue {
     }
 
     // どの状態から色変えしても描画モードに切り替える
-    @Watch("nowColor.hex")
+    @Watch('nowColor.hex')
     onChangeNewColor() {
         this.isEraserMode = false;
     }
