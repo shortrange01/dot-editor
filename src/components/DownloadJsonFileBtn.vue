@@ -1,5 +1,5 @@
 <template>
-    <div class="btn" @click="download">Download</div>
+    <div class="btn" @click="downloadJonFile()">Download</div>
 </template>
 
 <script lang="ts">
@@ -7,11 +7,11 @@ import { Component, Prop, Vue } from 'vue-property-decorator';
 import { DotList } from './EditorBlock.vue';
 
 @Component
-export default class DownloadBtn extends Vue {
+export default class DownloadJsonFileBtn extends Vue {
     @Prop({ type: Array }) dotList?: DotList;
     @Prop({ type: Array }) colorHistory?: string[];
 
-    onClickDownLoadBtn(): void {
+    downloadJonFile(): void {
         const link: HTMLAnchorElement = document.createElement('a');
         const data: { dotList?: DotList; colorHistory?: string[] } = {
             dotList: this.dotList,
