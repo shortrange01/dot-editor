@@ -1,7 +1,7 @@
 <template>
     <div class="container dotEditor">
         <demo v-show="showDemoModal" @onclick-close-btn="closeDemoModal"></demo>
-        <canvas id="canvas" class="canvas" width="512" height="512"></canvas>
+        <CanvasBlock ref="canvasBlock" :dot-list="dotList" />
         <div>
             <EditorBlock
                 ref="editorBlock"
@@ -31,13 +31,18 @@
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
+import CanvasBlock from './CanvasBlock.vue';
 import EditorBlock, { DotList } from './EditorBlock.vue';
 import PickerBtnBlock from './PickerBtnBlock.vue';
 import ColorHistoryBlock from './ColorHistoryBlock.vue';
 import Demo from './Demo.vue';
 
+const DotLineCount = 16; // １行分のドット数
+const MaxHistoryCount = 17; // 色選択履歴の最大保持数
+
 @Component({
     components: {
+        CanvasBlock,
         EditorBlock,
         PickerBtnBlock,
         ColorHistoryBlock,
@@ -49,52 +54,61 @@ export default class DotEditor extends Vue {
     colorHistory: string[] = [];
     isEraserMode = false;
     inputFileElement?: HTMLInputElement;
-    canvas?: HTMLCanvasElement;
     showDemoModal: boolean = false;
     pickerComponent = 'ChromePicker';
 
     $refs!: {
+        canvasBlock: CanvasBlock;
         editorBlock: EditorBlock;
         inputFile: HTMLInputElement;
     };
 
     created() {
+        this.initDotList();
+    }
+
+    mounted() {
+        this.inputFileElement = this.$refs.inputFile;
+    }
+
+    initDotList() {
         // 空の256ドット配列を作成
-        for (let i = 1; i <= 16; i++) {
+        for (let i = 1; i <= DotLineCount; i++) {
             const arr = [];
-            for (let i = 1; i <= 16; i++) {
+            for (let i = 1; i <= DotLineCount; i++) {
                 arr.push({ color: '' });
             }
             this.dotList.push(arr);
         }
     }
-    mounted() {
-        this.inputFileElement = this.$refs.inputFile;
-        this.canvas = document.querySelector('#canvas') as HTMLCanvasElement;
-    }
+
     changeColor(dot: { color: string }) {
         if (this.isEraserMode) {
             dot.color = '';
-            this.drowCanvas();
+            this.$refs.canvasBlock.drowCanvas();
             return;
         }
         dot.color = this.$refs.editorBlock.nowColor.hex;
-        this.drowCanvas();
+
+        this.$refs.canvasBlock.drowCanvas();
         if (this.colorHistory.indexOf(dot.color) < 0) {
             this.colorHistory.push(dot.color);
-            if (this.colorHistory.length > 17) {
+            if (this.colorHistory.length > MaxHistoryCount) {
                 this.colorHistory.shift();
             }
         }
     }
+
     // 色変え
     selectNewColor(color: string): void {
         this.$refs.editorBlock.nowColor = { hex: color };
     }
-    // 消しゴム
+
+    // 消しゴム機能の on/off
     toggleEraserMode() {
         this.isEraserMode = !this.isEraserMode;
     }
+
     onClickDownLoadBtn(): void {
         const link: HTMLAnchorElement = document.createElement('a');
         const data: { dotList: DotList; colorHistory: string[] } = {
@@ -106,13 +120,15 @@ export default class DotEditor extends Vue {
         link.download = `${Math.round(new Date().getTime() / 1000)}.json`;
         link.click();
     }
+
     onClickPngDownLoadBtn(): void {
         let link: HTMLAnchorElement = document.createElement('a');
-        link.href = this.canvas ? this.canvas.toDataURL('image/png') : '';
+        link.href = this.$refs.canvasBlock.canvas ? this.$refs.canvasBlock.canvas.toDataURL('image/png') : '';
         // ファイル名は取り合えずUNIXTIME
         link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
         link.click();
     }
+
     onChangeFile(event: any): void {
         if (event.currentTarget.value) {
             const reader: FileReader = new FileReader();
@@ -123,35 +139,22 @@ export default class DotEditor extends Vue {
                 const result = JSON.parse(event.currentTarget.result);
                 this.dotList = result.dotList;
                 this.colorHistory = result.colorHistory;
-                this.drowCanvas();
+
+                this.$refs.canvasBlock.drowCanvas();
             });
         }
     }
+
     onClickLoadBtn() {
         if (this.inputFileElement) this.inputFileElement.click();
     }
+
     onClickDemoBtn() {
         this.showDemoModal = true;
     }
+
     closeDemoModal() {
         this.showDemoModal = false;
-    }
-
-    // canvas描画
-    drowCanvas() {
-        // const canvas:HTMLCanvasElement | null = document.querySelector('#canvas');
-        let ctx: CanvasRenderingContext2D | null = this.canvas ? this.canvas.getContext('2d') : null;
-        if (ctx !== null && this.canvas) ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.dotList.forEach((list, listIndex) => {
-            if (list) {
-                list.forEach((val, valIndex) => {
-                    if (val.color && ctx !== null) {
-                        ctx.fillStyle = val.color;
-                        ctx.fillRect(valIndex * 32, listIndex * 32, 32, 32);
-                    }
-                });
-            }
-        });
     }
 
     setPickerComponent(picker: string) {
