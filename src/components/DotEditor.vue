@@ -7,7 +7,7 @@
                 ref="editorBlock"
                 :picker-component="pickerComponent"
                 :dot-list="dotList"
-                @changeColor="changeColor"
+                @setDotColor="setDotColor"
                 @selectNewColor="disableElaser"
             />
             <PickerBtnBlock :picker-component="pickerComponent" @selectPicker="setPickerComponent" />
@@ -19,12 +19,12 @@
             />
 
             <div class="fileBtnBlock">
-                <DownloadBtn :dot-list="dotList" :color-history="colorHistory" />
-                <div class="btn" @click="onClickLoadBtn">Load JSON</div>
-                <div class="btn" @click="onClickPngDownLoadBtn">PNG Download</div>
+                <DownloadJsonFileBtn :dot-list="dotList" :color-history="colorHistory" />
+                <div class="btn" @click="openFileSelector">Load JSON</div>
+                <div class="btn" @click="$refs.canvasBlock.downloadPngFile()">PNG Download</div>
                 <div class="btn" @click="openStepAnimationModal">Step Anime</div>
             </div>
-            <input ref="inputFile" style="display: none;" @change="onChangeFile" type="file" value />
+            <input ref="inputFile" style="display: none;" @change="loadJsonFile($event)" type="file" value />
         </div>
     </div>
 </template>
@@ -36,10 +36,14 @@ import EditorBlock, { DotList } from './EditorBlock.vue';
 import PickerBtnBlock from './PickerBtnBlock.vue';
 import ColorHistoryBlock from './ColorHistoryBlock.vue';
 import StepAnimationModal from './StepAnimationModal.vue';
-import DownloadBtn from './DownloadBtn.vue';
+import DownloadJsonFileBtn from './DownloadJsonFileBtn.vue';
 
 const DotLineCount = 16; // １行分のドット数
 const MaxHistoryCount = 17; // 色選択履歴の最大保持数
+
+interface FileAPIEventTarget extends EventTarget {
+    result: string;
+}
 
 @Component({
     components: {
@@ -48,7 +52,7 @@ const MaxHistoryCount = 17; // 色選択履歴の最大保持数
         PickerBtnBlock,
         ColorHistoryBlock,
         StepAnimationModal,
-        DownloadBtn,
+        DownloadJsonFileBtn,
     },
 })
 export default class DotEditor extends Vue {
@@ -84,15 +88,13 @@ export default class DotEditor extends Vue {
         }
     }
 
-    changeColor(dot: { color: string }) {
-        if (this.isEraserMode) {
-            dot.color = '';
-            this.$refs.canvasBlock.drowCanvas();
-            return;
-        }
-        dot.color = this.$refs.editorBlock.nowColor.hex;
-
+    setDotColor(dot: { color: string }) {
+        dot.color = this.isEraserMode ? '' : this.$refs.editorBlock.nowColor.hex;
         this.$refs.canvasBlock.drowCanvas();
+        if (!this.isEraserMode) this.addHistoryColor(dot);
+    }
+
+    addHistoryColor(dot: { color: string }) {
         if (this.colorHistory.indexOf(dot.color) < 0) {
             this.colorHistory.push(dot.color);
             if (this.colorHistory.length > MaxHistoryCount) {
@@ -101,42 +103,31 @@ export default class DotEditor extends Vue {
         }
     }
 
-    // 色変え
     selectNewColor(color: string): void {
         this.$refs.editorBlock.nowColor = { hex: color };
     }
 
-    // 消しゴム機能の on/off
     toggleEraserMode() {
         this.isEraserMode = !this.isEraserMode;
     }
 
-    onClickPngDownLoadBtn(): void {
-        let link: HTMLAnchorElement = document.createElement('a');
-        link.href = this.$refs.canvasBlock.canvas ? this.$refs.canvasBlock.canvas.toDataURL('image/png') : '';
-        // ファイル名は取り合えずUNIXTIME
-        link.download = `${Math.round(new Date().getTime() / 1000)}.png`;
-        link.click();
-    }
-
-    onChangeFile(event: any): void {
-        if (event.currentTarget.value) {
+    loadJsonFile(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        if (target.files) {
             const reader: FileReader = new FileReader();
-            reader.readAsText(event.currentTarget.files[0]);
-            reader.addEventListener('load', (event: any) => {
+            reader.readAsText(target.files[0]);
+            reader.addEventListener('load', (event: ProgressEvent) => {
                 // value を消さないと同じファイルを連続で読み込む際に change event が発火しない
                 if (this.inputFileElement) this.inputFileElement.value = '';
-                const result = JSON.parse(event.currentTarget.result);
+                const target = event.target as FileAPIEventTarget;
+                const result = JSON.parse(target.result);
                 this.dotList = result.dotList;
                 this.colorHistory = result.colorHistory;
-
-                this.$refs.canvasBlock.drowCanvas();
+                this.$nextTick().then(() => {
+                    this.$refs.canvasBlock.drowCanvas();
+                });
             });
         }
-    }
-
-    onClickLoadBtn() {
-        if (this.inputFileElement) this.inputFileElement.click();
     }
 
     openStepAnimationModal() {
@@ -153,6 +144,10 @@ export default class DotEditor extends Vue {
 
     disableElaser() {
         this.isEraserMode = false;
+    }
+
+    openFileSelector() {
+        if (this.inputFileElement) this.inputFileElement.click();
     }
 }
 </script>
